@@ -1,0 +1,2 @@
+debian/vyatta-bmc-clock-init.path lib/systemd/system
+debian/vyatta-bmc-clock-periodic.timer lib/systemd/system

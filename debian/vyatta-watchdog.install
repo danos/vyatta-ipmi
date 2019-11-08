@@ -1,0 +1,3 @@
+scripts/vyatta-watchdog opt/vyatta/sbin/
+scripts/vyatta-show-watchdog opt/vyatta/sbin/
+conf/vyatta-watchdog.conf etc/

@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# Copyright (c) 2018-2019, AT&T Intellectual Property.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+
+version=$(/opt/vyatta/bin/vyatta-platform-util --what-am-i)
+
+case "$version" in
+att.flexware-xs | att.flexware-s | att.flexware-m | att.flexware-l)
+
+    for dev in /dev/ipmi*
+    do
+        if [ ! -e "$dev" ]
+        then
+            modprobe ipmi_ssif addr=0x42
+            break
+        fi
+    done
+    ;;
+esac

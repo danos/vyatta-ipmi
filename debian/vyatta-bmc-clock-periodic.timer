@@ -1,0 +1,13 @@
+[Unit]
+Description=Trigger Vyatta BMC clock periodic synchronization
+ConditionPathExists=|/dev/ipmi0
+ConditionPathExists=|/dev/ipmi/0
+ConditionPathExists=|/dev/ipmidev/0
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=5m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

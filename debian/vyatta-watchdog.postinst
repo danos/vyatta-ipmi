@@ -1,0 +1,31 @@
+#!/bin/sh
+
+set -e
+
+pkg=vyatta-watchdog
+
+case "${1}" in
+    install|upgrade|configure)
+		update-rc.d -f watchdog remove > /dev/null
+		update-rc.d -f wd_keepalive remove > /dev/null
+		deb-systemd-helper disable watchdog.service
+		deb-systemd-helper disable wd_keepalive.service
+	;;
+	triggered)
+		deb-systemd-helper disable watchdog.service
+		deb-systemd-helper disable wd_keepalive.service
+	;;
+
+    abort-upgrade)
+
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+#DEBHELPER#
+
+exit 0

@@ -1,0 +1,116 @@
+module vyatta-system-watchdog-v1 {
+	namespace "urn:vyatta.com:mgmt:vyatta-system-watchdog:1";
+	prefix vyatta-system-watchdog-v1;
+
+	import vyatta-system-v1 {
+		prefix system;
+	}
+	import configd-v1 {
+		prefix configd;
+	}
+
+	organization "AT&T Inc.";
+	contact
+		"AT&T
+		Postal: 208 S. Akard Street
+		Dallas, TX 25202
+		Web: www.att.com";
+
+	description
+		"Copyright (c) 2018, AT&T Intellectual Property.
+		 All rights reserved.
+
+		 Redistribution and use in source and binary forms, with or without
+		 modification, are permitted provided that the following conditions
+		 are met:
+ 
+		 1. Redistributions of source code must retain the above copyright
+		    notice, this list of conditions and the following disclaimer.
+		 2. Redistributions in binary form must reproduce the above
+		    copyright notice, this list of conditions and the following
+		    disclaimer in the documentation and/or other materials provided
+		    with the distribution.
+		 3. Neither the name of the copyright holder nor the names of its
+		    contributors may be used to endorse or promote products derived
+		    from this software without specific prior written permission.
+ 
+		 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+		 'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+		 LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+		 FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+		 COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+		 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+		 BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+		 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+		 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+		 LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+		 ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+		 POSSIBILITY OF SUCH DAMAGE.
+
+		 SPDX-License-Identifier: BSD-3-Clause
+
+		 The YANG module for the Watchdog configuration";
+
+	revision 2018-07-09 {
+		description "Initial revision of version 1.";
+	}
+
+	typedef watchdog-status-type {
+		description
+			"A node using this type represents the current state of
+			watchdog process and timer in the system.";
+
+		type enumeration {
+			enum running {
+				description "A watchdog timer is running.";
+			}
+			enum disabled {
+				description "Watchdog timer is disabled.";
+			}
+			enum error {
+				description "Watchdog timer reported an error.";
+			}
+			enum unsupported {
+				description "Hardware platform doesn't include a watchdog timer.";
+			}
+		}
+	}
+
+	augment /system:system {
+		container watchdog {
+			description
+				"Enable system watchdog configuration. A hardware watchdog is needed for this
+				configuration to work correctly. This configuration will cause a system reboot
+				if the system crashes or hangs in a way that prevents watchdog pings for 1 minute.";
+			configd:help "System watchdog configuration";
+			presence "System watchdog configuration.";
+			container keepalive {
+				presence "Enable system watchdog.";
+				configd:help "Configure System watchdog keep alive pings";
+				configd:create "vyatta-watchdog --enable";
+				configd:delete "vyatta-watchdog --disable";
+			}
+			container state {
+				config false;
+				configd:get-state "vyatta-watchdog --json";
+				description "Watchdog state information.";
+				leaf status {
+					description "Current watchdog state";
+					type watchdog-status-type;
+				}
+				leaf status-text {
+					description "Additional textual information about the status.";
+					type string;
+				}
+				leaf time-left {
+					description "Seconds left before the expiry of watchdog timer.";
+					type uint32;
+				}
+				leaf timer {
+					description "Watchdog timer's initial value in seconds." ;
+					type uint32;
+				}
+			}
+		}
+	}
+}

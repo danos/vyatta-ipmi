@@ -1,0 +1,9 @@
+[Unit]
+Description=Vyatta BMC clock periodic synchronization
+ConditionPathExists=|/dev/ipmi0
+ConditionPathExists=|/dev/ipmi/0
+ConditionPathExists=|/dev/ipmidev/0
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'ipmitool sel time set "`date +%%m/%%d/%%Y\\ %%H:%%M:%%S`"'

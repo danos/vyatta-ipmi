@@ -1,0 +1,107 @@
+#!/usr/bin/python3
+
+# Copyright (c) 2018-2019, AT&T Intellectual Property.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+
+import argparse
+import json
+import os
+import sys
+import subprocess
+from vyatta import configd
+
+SELMGMT_ARGS_FILE = '/run/snmpd/selmgmt-args'
+SELMGMT_CONFIG = 'system bmc sel'
+SELMGMT_SERVICE = 'snmp-entsensor-trap'
+IPMI_DEVICES = [ '/dev/ipmi0', '/dev/ipmi/0', '/dev/ipmidev/0' ]
+SELCLEAR_CMD = [ '/usr/bin/ipmitool', 'sel', 'clear' ]
+SERVICE_RESTART_CMD = [ 'systemctl', 'restart', SELMGMT_SERVICE ]
+SET_SEL_POLICY_CIRCULAR = [ '/usr/bin/ipmitool', 'raw', '0x32', '0x7f', '0x01' ]
+SET_SEL_POLICY_CAPACITY = [ '/usr/bin/ipmitool', 'raw', '0x32', '0x7f', '0x00' ]
+
+def ipmi_exists():
+    for dev in IPMI_DEVICES:
+        if os.path.exists(dev):
+            return True
+    return False
+
+def run_cmd(cmd):
+    try:
+        r = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return r.returncode, r.stderr.decode(), r.stdout.decode()
+    except Exception as e:
+        print("Failed running command {}: {}".format(cmd, e))
+        sys.exit(1)
+
+def restart_service():
+    ret, err, out = run_cmd(SERVICE_RESTART_CMD)
+    if ret != 0:
+        print("Failed to restart {}: {}".format(SELMGMT_SERVICE, err))
+        sys.exit(1)
+
+def rpc_clear_bmc_sel():
+    ret, err, out = run_cmd(SELCLEAR_CMD)
+    if ret != 0:
+        output = "Failed clearing SEL: {}".format(err)
+    else:
+        output = out
+    json_output = { 'result' : output }
+    try:
+        print(json.dumps(json_output))
+    except ValueError as e:
+        print("Failed to encode output JSON: {}".format(e))
+        sys.exit(1)
+
+def ipmi_set_mode(mode):
+    if (mode == "circular"):
+        cmd = SET_SEL_POLICY_CIRCULAR
+    else:
+        cmd = SET_SEL_POLICY_CAPACITY
+    ret, err, out = run_cmd(cmd)
+    if ret != 0:
+        print("Failed to set SEL mode to {}: {}".format(mode, err))
+        sys.exit(1)
+
+def configure_bmc_sel():
+    client = configd.Client()
+    if not client.node_exists(client.AUTO, SELMGMT_CONFIG):
+        os.unlink(SELMGMT_ARGS_FILE);
+    else:
+        try:
+            cfg = client.tree_get_dict(SELMGMT_CONFIG)
+        except Exception as e:
+            print("Failed to get tree on '{}': '{}'".format(SELMGMT_CONFIG, e))
+            sys.exit(1)
+        try:
+            f = open(SELMGMT_ARGS_FILE, 'w')
+        except Exception as e:
+            print("Failed to open file '{}': '{}'".format(SELMGMT_ARGS_FILE, e))
+            sys.exit(1)
+        mode = cfg['sel']['mode']
+        ipmi_set_mode(mode)
+        f.write("%s\n" % (mode))
+        if 'syslog' in cfg['sel']:
+            f.write('syslog\n')
+        f.close()
+        restart_service()
+
+if __name__ == "__main__":
+    if not ipmi_exists():
+        print('Cannot open IPMI device, no IPMI support exists');
+        sys.exit(1);
+    parser = argparse.ArgumentParser(description='Vyatta BMC SEL Management')
+    parser.add_argument('-u', '--update', help='Update BMC SEL Configuration', action='store_true')
+    parser.add_argument('-c', '--clear', help='Clear BMC SEL', action='store_true')
+
+    args = parser.parse_args();
+
+    if args.update:
+        configure_bmc_sel()
+        exit(0)
+
+    if args.clear:
+        rpc_clear_bmc_sel()
+        exit(0)

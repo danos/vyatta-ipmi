@@ -1,0 +1,165 @@
+module vyatta-system-bmc-v1 {
+	namespace "urn:vyatta.com:mgmt:vyatta-system-bmc:1";
+	prefix vyatta-system-bmc-v1;
+
+	import vyatta-system-v1 {
+		prefix system;
+	}
+	import configd-v1 {
+		prefix configd;
+	}
+	import ietf-yang-types {
+		prefix ietf;
+	}
+
+	organization "AT&T Inc.";
+	contact
+		"AT&T
+		Postal: 208 S. Akard Street
+		Dallas, TX 25202
+		Web: www.att.com";
+
+	description
+		"Copyright (c) 2018-2019, AT&T Intellectual Property.
+		 All rights reserved.
+
+		 Redistribution and use in source and binary forms, with or without
+		 modification, are permitted provided that the following conditions
+		 are met:
+ 
+		 1. Redistributions of source code must retain the above copyright
+		    notice, this list of conditions and the following disclaimer.
+		 2. Redistributions in binary form must reproduce the above
+		    copyright notice, this list of conditions and the following
+		    disclaimer in the documentation and/or other materials provided
+		    with the distribution.
+		 3. Neither the name of the copyright holder nor the names of its
+		    contributors may be used to endorse or promote products derived
+		    from this software without specific prior written permission.
+ 
+		 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+		 'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+		 LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+		 FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+		 COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+		 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+		 BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+		 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+		 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+		 LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+		 ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+		 POSSIBILITY OF SUCH DAMAGE.
+
+		 SPDX-License-Identifier: BSD-3-Clause
+
+		 The YANG module for the Baseboard Management Controller (BMC)
+                 configuration and states.";
+
+	revision 2018-10-20 {
+		description "Add BMC SEL management support.";
+	}
+	revision 2018-09-20 {
+		description "Add sel-time to the BMC state.";
+	}
+	revision 2018-07-09 {
+		description "Initial revision of version 1.";
+	}
+
+	typedef bmc-status-type {
+		description
+			"A node using this type represents the current status of
+			BMC (Baseboard Management Controller)";
+
+		type enumeration {
+			enum ok {
+				description "BMC is running";
+			}
+			enum error {
+				description "BMC health check reported an error.";
+			}
+			enum unsupported {
+				description "Hardware platform isn't managed by a BMC.";
+			}
+		}
+	}
+
+	typedef bmc-sel-mode {
+		description
+			"The mode to operate when SEL is full.";
+
+		type enumeration {
+			enum "capacity" {
+				description "No new events added when SEL is full";
+				configd:help "No new events added when SEL is full";
+			}
+			enum "circular" {
+				description "SEL is wrapped when full";
+				configd:help "SEL is wrapped when full";
+			}
+		}
+	}
+
+	augment /system:system {
+		container bmc {
+			description "Baseboard Management Controller (BMC) configuration.";
+			configd:help "Baseboard Management Controller (BMC) configuration.";
+			container health-check {
+				description
+					"Enable BMC Monitoring. If the router is equipped with a
+					 Baseboard Management Controller(BMC), this configuration will
+					 check the status of the BMC at a regular interval. Results of
+					 these status checks will be logged in syslog.";
+				configd:help "Enable BMC Monitoring.";
+				presence "Enable BMC health-check";
+				configd:create "vyatta-bmc --enable";
+				configd:delete "vyatta-bmc --disable";
+			}
+			container sel {
+				description "BMC System Event Log (SEL) Management.";
+				configd:help "BMC System Event Log (SEL) Management.";
+				configd:end "vyatta-bmc-sel --update";
+				leaf mode {
+					type bmc-sel-mode;
+					description "BMC SEL mode when SEL is full";
+					default "capacity";
+					configd:help "BMC SEL mode when SEL is full";
+				}
+				leaf syslog {
+					type empty;
+					description "Enable logging of SEL events to syslog";
+					configd:help "Enable logging of SEL events to syslog";
+				}
+			}
+			container state {
+				config false;
+				configd:get-state "vyatta-bmc --json";
+				description "Current BMC state";
+				leaf status {
+					description "Current status of BMC";
+					type bmc-status-type;
+				}
+				leaf status-text {
+					description "Additional textual information about the status";
+					type string;
+				}
+				leaf sel-time {
+					description "The current time of the BMCs SEL clock";
+					type ietf:date-and-time;
+				}
+			}
+		}
+	}
+
+	rpc clear-bmc-sel {
+		description "Clear BMC System Event Log (SEL)";
+		configd:call-rpc "vyatta-bmc-sel --clear";
+		output {
+			leaf result {
+				description "The result of the operation;
+					result contains the output from the
+					'ipmitool sel clear' command";
+				type string;
+			}
+		}
+	}
+}

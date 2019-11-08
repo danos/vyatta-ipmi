@@ -1,0 +1,14 @@
+[Unit]
+Description=Vyatta BMC clock ntp synchronization
+ConditionPathExists=|/dev/ipmi0
+ConditionPathExists=|/dev/ipmi/0
+ConditionPathExists=|/dev/ipmidev/0
+After=ntp.service ntpd@.service
+PartOf=ntp.service ntpd@.service
+
+[Service]
+Type=forking
+ExecStart=/bin/sh -c '(sleep 3; ntp-wait; ipmitool sel time set "`date +%%m/%%d/%%Y\\ %%H:%%M:%%S`") &'
+
+[Install]
+WantedBy=ntp.service ntpd@.service

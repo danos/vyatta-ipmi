@@ -1,0 +1,5 @@
+debian/bmc-health-check.timer lib/systemd/system
+scripts/vyatta-bmc opt/vyatta/sbin
+scripts/vyatta-bmc-sel opt/vyatta/sbin
+scripts/vyatta-show-bmc opt/vyatta/bin
+scripts/vyatta-bmc-sel-op opt/vyatta/bin

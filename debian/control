@@ -1,0 +1,78 @@
+Source: vyatta-ipmi
+Section: admin
+Priority: optional
+Maintainer: Vyatta Package Maintainers <DL-vyatta-help@att.com>
+Build-Depends: debhelper (>=9), dh-systemd, dh-yang, pylint3, python3-vyatta-cfgclient
+Standards-Version: 3.9.8
+
+Package: vyatta-ipmi
+Architecture: all
+Depends: ${misc:Depends}, ipmitool, dmidecode, vyatta-platform-util, freeipmi-tools
+Description: ipmitool customization for Vyatta
+ Customization for the ipmitool upstream package
+
+Package: vyatta-bmc
+Architecture: all
+Depends: python3,
+ python3-vyatta-cfgclient,
+ vyatta-cfg,
+ systemd,
+ vyatta-entity-sensor-subagent,
+ ${misc:Depends}
+Description: BMC utilities for vyatta
+ Programs and system files for BMC configurations
+ and operational states
+
+Package: vyatta-system-bmc-v1-yang
+Architecture: all
+Depends: vyatta-bmc, ${yang:Depends}, ${misc:Depends}
+Description: Data model yang for BMC configuratioan
+ Baseboard Management Controller (BMC) health chceck
+ configuration and operational states yang models
+
+Package: vyatta-op-show-bmc-v1-yang
+Architecture: all
+Depends: vyatta-bmc, ${yang:Depends}, ${misc:Depends}
+Description: Yang for BMC operation commands
+ Implements operational mode show bmc command
+
+Package: vyatta-watchdog
+Architecture: all
+Depends: python3,
+ python3-vyatta-cfgclient,
+ vyatta-cfg,
+ systemd,
+ watchdog,
+ ${misc:Depends}
+Description: Vyatta wrappers for watchdog services
+ Programs and system files for watchdog configuration and
+ operational commands
+
+Package: vyatta-system-watchdog-v1-yang
+Architecture: all
+Depends: vyatta-watchdog, ${yang:Depends}, ${misc:Depends}
+Description: Data model yang for Watchdog configuratioan
+ Yang models for System Watchdog configuration and
+ operational states
+
+Package: vyatta-op-show-watchdog-v1-yang
+Architecture: all
+Depends: vyatta-watchdog, ${yang:Depends}, ${misc:Depends}
+Description: Yang for watchdog operational commands
+ Implements operational mode show watchdog command
+
+Package: vyatta-bmc-clock
+Architecture: all
+Depends: systemd,
+ ipmitool,
+ ntp,
+ ${misc:Depends}
+Description: BMC clock synchroniziation
+ Services and timer necessary to keep the BMC clock
+ in synchronization with the host system clock.
+
+Package: vyatta-op-clear-bmc-v1-yang
+Architecture: all
+Depends: vyatta-bmc, ${yang:Depends}, ${misc:Depends}
+Description: Yang for BMC operational commands
+ Implements operational mode bmc sel clear command

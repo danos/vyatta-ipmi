@@ -1,0 +1,59 @@
+#!/usr/bin/python3
+
+# Copyright (c) 2018-2019, AT&T Intellectual Property.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+
+import sys
+from vyatta import configd
+import argparse
+
+FMT="{:20} : {}"
+
+def print_kv(k, v):
+    print(FMT.format(k, v))
+
+def show_wd_status(wd):
+    st = wd.get('state')
+    
+    if (st == None):
+        print("Watchdog not available/supported")
+        return
+   
+    print_kv("Watchdog Status", st['status'])
+    print_kv("Status Detail", st['status-text'])
+
+    if st['status'] == 'running':
+        try:
+            print_kv('Timeout', st['timer'])
+            print_kv('Time Left', st['time-left'])
+        except KeyError:
+            pass
+
+def get_watchdog():
+    try:
+        c = configd.Client()
+    except configd.FatalException as e:
+        print("can't connect to configd: {}".format(str(e)), file=sys.stderr) 
+        sys.exit(1)
+
+    d = {}
+    d = c.tree_get_full_dict("system watchdog", configd.Client.RUNNING, "json")
+    return d['watchdog']
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Watchdog Show')
+    parser.add_argument('-s', '--status', help='Show Watchdog status', action='store_true')
+
+    args = parser.parse_args()
+
+    if args.status:
+        try:
+            wd = get_watchdog()
+            show_wd_status(wd)
+        except configd.Exception:
+            print_kv('Watchdog Status', 'Not Configured')
+

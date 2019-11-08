@@ -1,0 +1,11 @@
+[Unit]
+Description=IPMI device paths to activate ipmievd
+
+[Path]
+PathExists=/dev/ipmi0
+PathExists=/dev/ipmi/0
+PathExists=/dev/ipmidev/0
+Unit=ipmievd.service
+
+[Install]
+WantedBy=multi-user.target

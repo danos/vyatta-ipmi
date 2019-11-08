@@ -1,0 +1,74 @@
+#!/usr/bin/python3
+
+# Copyright (c) 2018-2019 AT&T Intellectual Property.
+# All Rights Reserved
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+
+import sys
+from vyatta import configd
+import argparse
+
+FMT="{:20} : {}"
+
+def print_kv(k, v):
+    print(FMT.format(k, v))
+
+def show_bmc_status(bmc):
+    bmc_state = bmc.get('state')
+
+    if (bmc_state == None):
+        print("BMC not available/supported")
+        return
+
+    print_kv("BMC Status", bmc_state['status'])
+
+    hc = 'Configured' if 'health-check' in bmc else "Not Configured"
+    print_kv("BMC Health Check", hc)
+
+    if bmc_state['status'] == 'ok':
+        for item in bmc_state['status-text'].split("\n"):
+            k, v =  item.split('=')
+            print(FMT.format(k, v))
+    else:
+        print (FMT.format('Error', bmc_state['status-text']))
+
+def show_bmc_time(bmc):
+    bmc_state = bmc.get('state')
+
+    if (bmc_state == None or 'sel-time' not in bmc_state):
+        print("BMC SEL time not available/supported")
+        return
+
+    print("BMC SEL time:", bmc_state['sel-time'])
+
+def get_bmc():
+    try:
+        c = configd.Client()
+    except:
+       print("can't connect to configd\n", file=sys.stderr)
+       sys.exit(1)
+
+    try:
+        d = c.tree_get_full_dict("system bmc", configd.Client.RUNNING, "json")
+    except:
+        print(msg="can't retrieve bmc information\n", file=sys.stderr)
+        sys.exit(1)
+    return d['bmc']
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='BMC Show')
+    parser.add_argument('-s', '--status', help='Show BMC status', action='store_true')
+    parser.add_argument('-t', '--time', help='Show BMC SEL time', action='store_true')
+
+    args = parser.parse_args()
+
+    if args.status:
+        bmc = get_bmc()
+        show_bmc_status(bmc)
+
+    if args.time:
+        bmc = get_bmc()
+        show_bmc_time(bmc)

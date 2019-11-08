@@ -1,0 +1,34 @@
+#!/usr/bin/perl
+
+# **** License ****
+#
+# Copyright (c) 2018-2019 AT&T Intellectual Property.
+#   All Rights Reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+
+use strict;
+use warnings;
+
+use Getopt::Long;
+use JSON;
+
+use lib "/opt/vyatta/share/perl5";
+use Vyatta::Configd;
+
+sub bmc_sel_clear_op {
+    my $client = Vyatta::Configd::Client->new();
+
+    my $output =
+      $client->call_rpc_hash( "vyatta-system-bmc-v1", "clear-bmc-sel", {} );
+    exit(1) unless defined($output);
+    print $output->{"result"};
+    return;
+}
+
+my $clear;
+
+GetOptions( "clear" => \$clear, );
+
+bmc_sel_clear_op() if ($clear);

@@ -1,0 +1,14 @@
+[Unit]
+Description=Vyatta load ipmi ssif module
+Before=system-configure.service
+After=local-fs.target system-preconfigure.service
+Requires=local-fs.target
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/vyatta/sbin/ucpe-xsmall-ipmi-ssif
+RemainAfterExit=yes
+
+[Install]
+WantedBy=system-configure.service

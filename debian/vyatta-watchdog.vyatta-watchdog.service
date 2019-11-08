@@ -1,0 +1,13 @@
+[Unit]
+Description=Vyatta Watchdog Service
+Conflicts=wd_keepalive.service watchdog.service
+
+[Service]
+Type=forking
+EnvironmentFile=/etc/default/watchdog
+Environment="watchdog_options=--verbose --config-file /etc/vyatta-watchdog.conf"
+Environment="wd_dev=/dev/watchdog" "ipmi_dev=/dev/ipmi0" "ipmi_wd_module=ipmi_watchdog"
+ExecStartPre=/bin/sh -c '[ -c "${wd_dev}" ] || { [ -c "${ipmi_dev}" ] && \
+                          /usr/bin/ipmitool mc watchdog get && /sbin/modprobe "${ipmi_wd_module}" ; }'
+ExecStart=/bin/sh -c '[ $run_watchdog != 1 ] || exec /usr/sbin/watchdog $watchdog_options'
+

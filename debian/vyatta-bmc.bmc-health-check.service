@@ -1,0 +1,10 @@
+[Unit]
+Description=Vyatta BMC Health check service
+ConditionPathExists=|/dev/ipmi0
+ConditionPathExists=|/dev/ipmi/0
+ConditionPathExists=|/dev/ipmidev/0
+
+[Service]
+Type=oneshot
+ExecStart=/opt/vyatta/sbin/vyatta-bmc --syslog
+

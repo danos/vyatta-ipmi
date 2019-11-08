@@ -1,0 +1,190 @@
+#!/usr/bin/python3
+
+# Copyright (c) 2018-2019, AT&T Intellectual Property.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+
+import os
+import sys
+import fcntl
+import argparse
+import struct
+import subprocess
+import json
+
+def  err(msg):
+    print(msg, file=sys.stderr)
+
+def IOC(rw, base, n, size):
+    """A quick implementation of linux _IOC, _IOR, _IOW macros
+       size is an interger. Use struct.calcsize(fmt) to convert struct sizes
+       before calling this function.
+    """
+    N_SHIFT = 0
+    BASE_SHIFT = 8
+    SZ_SHIFT = 16
+    RW_SHIFT = 30
+    return  rw << RW_SHIFT | base << BASE_SHIFT | n << N_SHIFT | size << SZ_SHIFT
+
+# IOCTL directions
+RD = 2
+WR = 1
+
+def IOR(base, n, size):
+    return IOC(RD, base, n, size)
+
+def IOW(base, n, size):
+    return IOC(WR, base, n, size)
+
+def IOWR(base, n, size):
+    return IOC(WR|RD, base, n, size)
+
+
+WATCHDOG_IOCTL_BASE = ord('W')
+class WDIOCTL:
+    """
+    A Callable for watchdog ioctls. Initialize with 
+      f: IOR|IOW|IOWR,NR, fmt
+      n: IOCTL number - offset from base. 
+      fmt: struct compatible format to calculate size.
+    """
+    def __init__(self, f, n, fmt):
+        self.f = f
+        self.n = n
+        self.fmt = fmt
+        self.ioc = f(WATCHDOG_IOCTL_BASE, n, struct.calcsize(self.fmt))
+    def __call__(self, fd, *args):
+        """
+        Returns a dictionary with the fields as keys.
+        Caller must pass the correct number of keys after
+        fd arguments
+        """
+        v = bytearray(struct.calcsize(self.fmt))
+        fcntl.ioctl(fd, self.ioc, v)
+        return dict(zip(args, struct.unpack(self.fmt, v)))
+
+    def set(self, fd, *args):
+        v = struct.pack(self.fmt, *args)
+        fcntl.ioctl(fd, self.ioc, v)
+
+
+# Watchdog ioctl devinitions from /usr/include/linux/watchdog.h
+WDIOC_GETSUPPORT    =   WDIOCTL(IOR, 0, "=II32s")
+WDIOC_GETSTATUS     =   WDIOCTL(IOR, 1, "=I")
+WDIOC_GETBOOTSTATUS =   WDIOCTL(IOR, 2, "=I")
+WDIOC_GETTEMP       =   WDIOCTL(IOR, 3, "=I")
+WDIOC_SETOPTIONS    =   WDIOCTL(IOR, 4, "=I")
+WDIOC_KEEPALIVE     =   WDIOCTL(IOR, 5, "=I")
+WDIOC_SETTIMEOUT    =   WDIOCTL(IOWR, 6,"=I")
+WDIOC_GETTIMEOUT    =   WDIOCTL(IOR, 7, "=I")
+WDIOC_SETPRETIMEOUT =   WDIOCTL(IOWR, 8, "=I")
+WDIOC_GETPRETIMEOUT =   WDIOCTL(IOR, 9, "=I")
+WDIOC_GETTIMELEFT   =   WDIOCTL(IOR, 10, "=I")
+
+WATCHDOG_DEV = '/dev/watchdog'
+WD_TIMEOUT_DEFAULT = 60
+WATCHDOG_SERVICE = 'vyatta-watchdog'
+
+def get_watchdog_from_fd(fd):
+    ret = {}
+    try:
+        d = WDIOC_GETSUPPORT(fd, 'options', 'fw_ver', 'ident')
+        ret['status-text'] = "Watchdog: {}, fw_ver: {}".format(str(d['ident'].decode().strip('\0')), d['fw_ver'])
+    except EnvironmentError as e:
+        err("IOCTL GETSUPPORT failed: {}".format(str(e)))
+
+    try:
+        d = WDIOC_GETTIMEOUT(fd, 'timer')
+        ret.update(d)
+    except EnvironmentError as e:
+        err("IOCTL GETTIMEOUT failed: {}".format(str(e)))
+
+    try:
+        d = WDIOC_GETTIMELEFT(fd, 'time-left')
+        ret.update(d)
+    except EnvironmentError as e:
+        err("IOCTL GETTIMELEFT failed: {}".format(str(e)))
+    return ret
+
+def get_watchdog_info():
+    if not os.path.exists(WATCHDOG_DEV):
+        return {
+            'status' : 'unsupported',
+            'status-text' : "Hardware doesn't support watchdog timer",
+        }
+    # do not open watchdog unless the watchdog service is
+    # running,
+    info = {}
+    try:
+        wd_service_status_cmd = ['systemctl', '-q', 'is-active', WATCHDOG_SERVICE ]
+        r = subprocess.run(wd_service_status_cmd, check=True)
+        info['status'] = 'running'
+    except subprocess.CalledProcessError:
+        return {
+                'status' : 'disabled',
+                'status-text' : 'watchdog is disabled',
+        }
+
+    try:
+        r = subprocess.run(['systemctl', 'stop', WATCHDOG_SERVICE ], check=True)
+    except:
+        return {
+                'status' : 'error',
+                'status-text' : "can't stop watchdog before getting status",
+        }
+
+    try:
+        with open(WATCHDOG_DEV, "w") as fd:
+            info.update(get_watchdog_from_fd(fd))
+            fd.write('V') # write magic character
+    except EnvironmentError as e:
+        err("Error in reading watchdog status: {}".format(str(e)))
+        info['status'] = 'error'
+        info['status-text'] = str(e)
+
+    try:
+        subprocess.run(['systemctl', 'start', WATCHDOG_SERVICE ]) # restart service
+    except EnvironmentError as e:
+        err("Error in restarting watchdog service: {}".format(str(e)))
+
+    return info
+
+
+def setup_watchdog(enable=None):
+    if not os.path.exists(WATCHDOG_DEV):
+        err("Hardware doesn't support watchdog timer")
+        return
+
+    if enable:
+        cmd = 'start'
+    else:
+        cmd = 'stop'
+    
+    wd_start = ['systemctl', cmd, WATCHDOG_SERVICE ]
+    try:
+        r = subprocess.run(wd_start, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+    except subprocess.CalledProcessError as e:
+        err("failed to {} watchdog service: {}".format(cmd, str(e)))
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Vyatta Watchdog Command.')
+    parser.add_argument('-e', '--enable', help='Log output to syslog', action='store_true')
+    parser.add_argument('-d', '--disable', help='Prints a yang json output for the command', action='store_true')
+    parser.add_argument('-j', '--json', help='Prints a yang json output for the command', action='store_true')
+
+    args = parser.parse_args();
+
+    if args.disable:
+        setup_watchdog(enable=False)
+        exit(0)
+
+    if args.enable:
+        setup_watchdog(enable=True)
+        exit(0)
+    
+    if args.json:
+        json_data = get_watchdog_info()
+        print(json.dumps(json_data))
+        exit(0)

@@ -1,0 +1,138 @@
+#!/usr/bin/python3
+
+# Copyright (c) 2018-2019, AT&T Intellectual Property.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+
+import argparse
+import re
+import os
+import sys
+import subprocess
+from syslog import LOG_DAEMON, LOG_WARNING, LOG_DEBUG, syslog
+import json
+
+IPMICMD = [ '/usr/bin/ipmitool', 'bmc', 'info' ]
+IPMISELTIMECMD = [ '/usr/bin/ipmitool', 'sel', 'time', 'get' ]
+IPMIIDS = ('Device ID', 'Device Revision', 'Firmware Revision', 'IPMI Version', 'Manufacturer Name', 'Product Name', )
+DEVPATHS = [ '/dev/ipmi0', '/dev/ipmi/0', '/dev/ipmidev/0' ]
+
+# health-check:
+# success: no stdout
+# Error: print exit code and stderr.
+# status-check:
+# success:
+#  print json output. 
+# Error:
+#  print stderr, exit code, exception
+# 
+
+def check_ipmi_support():
+    for d in DEVPATHS:
+        if os.path.exists(d):
+            return True
+    return None
+
+def format_bmc_info(out):
+    kv = {}
+    for item in out.split("\n"):
+        t = re.split(r"\s+:\s+", item);
+        if len(t) < 2:
+            pass
+        else:
+            kv[t[0]] = t[1];
+    r = [];
+    for k in IPMIIDS:
+        if k in kv:
+            r.append("{}={}".format(k, kv[k] ))
+    return "\n".join(r);
+
+def bmc_state_json(rc, out, err):
+    d = {}
+    if rc == 0:
+        d['status'] = 'ok'
+        d['status-text'] = format_bmc_info(out)
+    else:
+        if (rc < 0):
+            d['status'] = 'unsupported'
+        else:
+            d['status'] = 'error'
+        d['status-text'] = err;
+
+    rc, seltime, err = ipmi_cmd(IPMISELTIMECMD)
+    if rc == 0:
+        try:
+            date, time = seltime.split()
+            mm, dd, yy = date.split('/', 2)
+            HH, MM, SS = time.split(':', 2)
+            d['sel-time'] = \
+                "{}-{}-{}T{}:{}:{}-00:00".format(yy, mm, dd, HH, MM, SS)
+        except:
+            pass
+
+    return d
+
+def bmc_health_log(rc, out, err):
+    if rc == 0:
+        syslog(LOG_DEBUG|LOG_DAEMON, "BMC health check succeded");
+        return
+    syslog(LOG_WARNING|LOG_DAEMON, "BMC health check failed." + err)
+
+
+def ipmi_cmd(ipmicmd=IPMICMD, timeout=3):
+    if not check_ipmi_support():
+        return -1, '', "BMC IPMI Interface not supported"
+    try:
+        result = subprocess.run(ipmicmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout, check=True)
+        return result.returncode, result.stdout.decode(), result.stderr.decode()
+    except subprocess.CalledProcessError as e:
+        return e.returncode, e.output.decode(), e.stderr.decode()
+    except subprocess.TimeoutExpired as to:
+        return 1, '', "BMC Command Timed Out: No response from BMC in {} seconds".format(timeout)
+
+def setup_bmc_health_check(enable=None):
+    if not check_ipmi_support():
+        print("BMC IPMI Interface not supported",file=sys.stderr)
+        syslog(LOG_WARNING|LOG_DAEMON, "BMC IPMI Interface not supported")
+        return
+    if enable:
+        cmd = 'start'
+    else:
+        cmd = 'stop'
+    service = 'bmc-health-check.timer'
+    try:
+        r = subprocess.run([ 'systemctl', cmd, service ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+    except subprocess.CalledProcessError as e:
+        print("Can't {} {}: {}".format(cmd, service, e.stderr.decode()), file=sys.stderr)
+        return
+
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Vyatta IPMI BMC Command.')
+    parser.add_argument('-e', '--enable', help='Start BMC health-check timer', action='store_true')
+    parser.add_argument('-d', '--disable', help='Stop BMC health-check timer', action='store_true')
+    parser.add_argument('-s', '--syslog', help='Log output to syslog', action='store_true')
+    parser.add_argument('-j', '--json', help='Prints a yang json output for the command', action='store_true')
+
+    args = parser.parse_args();
+
+    if args.enable:
+        setup_bmc_health_check(enable=True)
+        exit(0)
+
+    if args.disable:
+        setup_bmc_health_check(enable=False)
+        exit(0)
+
+    rc, out, err = ipmi_cmd()
+    if args.syslog:
+        bmc_health_log(rc, out, err)
+        exit(rc)
+    
+    if args.json:
+        json_data = bmc_state_json(rc, out, err)
+        print(json.dumps(json_data))
+        exit(0)
