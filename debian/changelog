@@ -1,3 +1,9 @@
+vyatta-ipmi (0.7) unstable; urgency=medium
+
+  * Danos Import master
+
+ -- Vyatta Package Maintainers <DL-vyatta-help@att.com>  Thu, 07 Nov 2019 13:36:28 -0800
+
 vyatta-ipmi (0.5+danos1) unstable; urgency=medium
 
   * Danos Import

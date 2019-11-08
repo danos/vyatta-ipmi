@@ -1,0 +1,14 @@
+#! /bin/bash
+#
+# Copyright (c) 2018-2019, AT&T Intellectual Property.
+# All rights reserved.
+
+source "$(cd "$(dirname "${0}")" && pwd -P)"/../tech-support.functions
+
+if [ ! -d /dev/ipmi0 ]; then
+	exit
+fi
+
+header BMC
+
+time_out "run show bmc status"
