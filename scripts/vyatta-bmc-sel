@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Copyright (c) 2018-2019, AT&T Intellectual Property.
+# Copyright (c) 2018-2020, AT&T Intellectual Property.
 # All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-only
@@ -90,8 +90,8 @@ def configure_bmc_sel():
 
 if __name__ == "__main__":
     if not ipmi_exists():
-        print('Cannot open IPMI device, no IPMI support exists');
-        sys.exit(1);
+        print('No IPMI devices found, ignoring IPMI configuration');
+        sys.exit(0);
     parser = argparse.ArgumentParser(description='Vyatta BMC SEL Management')
     parser.add_argument('-u', '--update', help='Update BMC SEL Configuration', action='store_true')
     parser.add_argument('-c', '--clear', help='Clear BMC SEL', action='store_true')
