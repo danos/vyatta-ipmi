@@ -1,3 +1,10 @@
+vyatta-ipmi (0.8) unstable; urgency=medium
+
+  [ Charles (Chas) Williams ]
+  * vyatta-bmc-sel: don't error is no IPMI found
+
+ -- Sameer Agrawal <sagrawa@mail.eng.vyatta.net>  Fri, 21 Aug 2020 15:55:23 -0700
+
 vyatta-ipmi (0.7) unstable; urgency=medium
 
   * Danos Import master
