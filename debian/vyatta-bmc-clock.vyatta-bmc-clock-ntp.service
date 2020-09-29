@@ -1,8 +1,7 @@
 [Unit]
 Description=Vyatta BMC clock ntp synchronization
-ConditionPathExists=|/dev/ipmi0
-ConditionPathExists=|/dev/ipmi/0
-ConditionPathExists=|/dev/ipmidev/0
+ConditionPathExists=|/run/vyatta/platform/ufi.s9500-30xs
+After=vyatta-platform-name.service
 After=ntp.service ntpd@.service
 PartOf=ntp.service ntpd@.service
 

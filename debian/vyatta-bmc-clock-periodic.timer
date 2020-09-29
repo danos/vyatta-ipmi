@@ -1,8 +1,7 @@
 [Unit]
 Description=Trigger Vyatta BMC clock periodic synchronization
-ConditionPathExists=|/dev/ipmi0
-ConditionPathExists=|/dev/ipmi/0
-ConditionPathExists=|/dev/ipmidev/0
+ConditionPathExists=|/run/vyatta/platform/ufi.s9500-30xs
+After=vyatta-platform-name.service
 
 [Timer]
 OnCalendar=hourly

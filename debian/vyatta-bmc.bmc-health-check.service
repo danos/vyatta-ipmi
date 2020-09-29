@@ -1,8 +1,6 @@
 [Unit]
 Description=Vyatta BMC Health check service
-ConditionPathExists=|/dev/ipmi0
-ConditionPathExists=|/dev/ipmi/0
-ConditionPathExists=|/dev/ipmidev/0
+ConditionPathExists=|/run/vyatta/platform/ufi.s9500-30xs
 
 [Service]
 Type=oneshot
