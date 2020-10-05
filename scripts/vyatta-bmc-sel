@@ -11,7 +11,9 @@ import json
 import os
 import sys
 import subprocess
+
 from vyatta import configd
+from vyatta.platform.detect import detect, PlatformError
 
 SELMGMT_ARGS_FILE = '/run/snmpd/selmgmt-args'
 SELMGMT_CONFIG = 'system bmc sel'
@@ -21,6 +23,8 @@ SELCLEAR_CMD = [ '/usr/bin/ipmitool', 'sel', 'clear' ]
 SERVICE_RESTART_CMD = [ 'systemctl', 'restart', SELMGMT_SERVICE ]
 SET_SEL_POLICY_CIRCULAR = [ '/usr/bin/ipmitool', 'raw', '0x32', '0x7f', '0x01' ]
 SET_SEL_POLICY_CAPACITY = [ '/usr/bin/ipmitool', 'raw', '0x32', '0x7f', '0x00' ]
+
+SUPPORTED_PLATFORMS = [ 'ufi.s9500-30xs', 'ufi.s9700-53dx' ]
 
 def ipmi_exists():
     for dev in IPMI_DEVICES:
@@ -66,6 +70,16 @@ def ipmi_set_mode(mode):
         sys.exit(1)
 
 def configure_bmc_sel():
+    try:
+        platform = detect()
+    except PlatformError as e:
+        print('failed to detect platform ' + repr(e))
+        sys.exit(1)
+
+    if not platform.get_platform_string() in SUPPORTED_PLATFORMS:
+        print('WARNING: BMC SEL configuration is unsupported on this platform.')
+        sys.exit(0)
+
     client = configd.Client()
     if not client.node_exists(client.AUTO, SELMGMT_CONFIG):
         os.unlink(SELMGMT_ARGS_FILE);
