@@ -1,3 +1,11 @@
+vyatta-ipmi (0.9) unstable; urgency=medium
+
+  [ Charles (Chas) Williams ]
+  * clock: conditionally start BMC time synchronization
+  * vyatta-bmc-sel: ignore BMC SEL on unsupported platforms
+
+ -- Sameer Agrawal <sagrawa@mail.eng.vyatta.net>  Fri, 16 Oct 2020 10:44:37 -0700
+
 vyatta-ipmi (0.8) unstable; urgency=medium
 
   [ Charles (Chas) Williams ]
