@@ -9,7 +9,8 @@
 version=$(/opt/vyatta/bin/vyatta-platform-util --what-am-i)
 
 case "$version" in
-att.flexware-xs | att.flexware-s | att.flexware-m | att.flexware-l)
+att.flexware-xs | att.flexware-s | att.flexware-m | att.flexware-l | \
+ipi.osde.sm1 | ipi.osde.sm2 | ipi.osde.sm3 | ipi.osde.sm4)
 
     for dev in /dev/ipmi*
     do
