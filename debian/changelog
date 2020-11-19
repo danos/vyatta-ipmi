@@ -1,3 +1,10 @@
+vyatta-ipmi (0.10) unstable; urgency=medium
+
+  [ Pooja Chauhan ]
+  * Platform: Support for IPI Model platforms
+
+ -- Sameer Agrawal <sagrawa@mail.eng.vyatta.net>  Thu, 19 Nov 2020 10:40:19 -0800
+
 vyatta-ipmi (0.9) unstable; urgency=medium
 
   [ Charles (Chas) Williams ]
