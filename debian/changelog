@@ -1,3 +1,10 @@
+vyatta-ipmi (0.11) unstable; urgency=medium
+
+  [ Duncan Eastoe ]
+  * vyatta-show-watchdog: KeyError when not configured
+
+ -- Sameer Agrawal <sagrawa@mail.eng.vyatta.net>  Tue, 01 Dec 2020 08:32:26 -0800
+
 vyatta-ipmi (0.10) unstable; urgency=medium
 
   [ Pooja Chauhan ]
