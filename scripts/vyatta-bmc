@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Copyright (c) 2018-2019, AT&T Intellectual Property.
+# Copyright (c) 2018-2021, AT&T Intellectual Property.
 # All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-only
@@ -18,6 +18,7 @@ IPMICMD = [ '/usr/bin/ipmitool', 'bmc', 'info' ]
 IPMISELTIMECMD = [ '/usr/bin/ipmitool', 'sel', 'time', 'get' ]
 IPMIIDS = ('Device ID', 'Device Revision', 'Firmware Revision', 'IPMI Version', 'Manufacturer Name', 'Product Name', )
 DEVPATHS = [ '/dev/ipmi0', '/dev/ipmi/0', '/dev/ipmidev/0' ]
+BMC_TIMEOUT = 15
 
 # health-check:
 # success: no stdout
@@ -81,7 +82,7 @@ def bmc_health_log(rc, out, err):
     syslog(LOG_WARNING|LOG_DAEMON, "BMC health check failed." + err)
 
 
-def ipmi_cmd(ipmicmd=IPMICMD, timeout=3):
+def ipmi_cmd(ipmicmd=IPMICMD, timeout=BMC_TIMEOUT):
     if not check_ipmi_support():
         return -1, '', "BMC IPMI Interface not supported"
     try:
