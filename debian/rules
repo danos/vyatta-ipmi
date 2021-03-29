@@ -3,6 +3,11 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
+PYLINT := $(shell which pylint3)
+ifndef PYLINT
+PYLINT := pylint
+endif
+
 %:
 	dh $@ --with=systemd --with=yang
 
@@ -15,7 +20,7 @@ override_dh_auto_test:
 	touch scripts/vyatta/__init__.py
 	ln -s /usr/lib/python3/dist-packages/vyatta/configd.py scripts/vyatta/configd.py
 	# End of workaround
-	pylint3 -E                           \
+	$(PYLINT) -E                           \
 		scripts/vyatta-bmc           \
 		scripts/vyatta-bmc-sel       \
 		scripts/vyatta-show-bmc      \
