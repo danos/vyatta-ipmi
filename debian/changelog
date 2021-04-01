@@ -1,3 +1,14 @@
+vyatta-ipmi (0.12) unstable; urgency=medium
+
+  [ Nicholas Brown ]
+  * dh-systemd is part of debhelper
+  * check for appropriate pylint version
+
+  [ Charles (Chas) Williams ]
+  * vyatta-bmc: increase the BMC timeout (Bugfix: VRVDR-54710)
+
+ -- Sameer Agrawal <sagrawa@mail.eng.vyatta.net>  Thu, 01 Apr 2021 11:00:24 -0700
+
 vyatta-ipmi (0.11) unstable; urgency=medium
 
   [ Duncan Eastoe ]
