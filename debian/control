@@ -2,7 +2,7 @@ Source: vyatta-ipmi
 Section: admin
 Priority: optional
 Maintainer: Vyatta Package Maintainers <DL-vyatta-help@att.com>
-Build-Depends: debhelper (>=9.20160709), dh-yang, pylint3, python3-vyatta-cfgclient
+Build-Depends: debhelper (>=9.20160709), dh-yang, meson, pylint3, python3-vyatta-cfgclient
 Standards-Version: 3.9.8
 
 Package: vyatta-ipmi
@@ -77,3 +77,9 @@ Architecture: all
 Depends: vyatta-bmc, ${yang:Depends}, ${misc:Depends}
 Description: Yang for BMC operational commands
  Implements operational mode bmc sel clear command
+
+Package: vyatta-healthmon
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Daemon to platform monitoring commpands
+ Service to commands periodically.

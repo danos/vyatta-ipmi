@@ -3,13 +3,21 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
+# Request CFLAGS and LDFLAGS be exported so they can be picked up by
+# the makefiles
+DPKG_EXPORT_BUILDFLAGS = 1
+#
+# Resolve symbols at load time to catch undefined symbols earlier and
+# to avoid unpredictable performance at runtime
+export DEB_BUILD_MAINT_OPTIONS=hardening=+bindnow
+
 PYLINT := $(shell which pylint3)
 ifndef PYLINT
 PYLINT := pylint
 endif
 
 %:
-	dh $@ --with=systemd --with=yang
+	dh $@ --builddirectory=build --with=systemd --with=yang --buildsystem=meson+ninja
 
 override_dh_auto_test: scripts/vyatta/configd.py
 	dh_auto_test
