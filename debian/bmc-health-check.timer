@@ -1,6 +1,0 @@
-[Unit]
-Description=BMC Health Check Timer
-
-[Timer]
-OnBootSec=2min
-OnUnitActiveSec=1min

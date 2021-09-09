@@ -3,6 +3,6 @@ Description=Vyatta BMC Health check service
 ConditionPathExists=|/run/vyatta/platform/ufi.s9500-30xs
 
 [Service]
-Type=oneshot
-ExecStart=/opt/vyatta/sbin/vyatta-bmc --syslog
-
+Environment="ARGS=--interval 60 --timeout 15"
+Type=simple
+ExecStart=/lib/vyatta-healthmon/healthmon $ARGS

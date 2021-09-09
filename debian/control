@@ -19,6 +19,7 @@ Depends: python3,
  vyatta-cfg,
  systemd,
  vyatta-entity-sensor-subagent,
+ vyatta-healthmon,
  ${misc:Depends}
 Description: BMC utilities for vyatta
  Programs and system files for BMC configurations

@@ -77,7 +77,7 @@ def bmc_state_json(rc, out, err):
 
 def bmc_health_log(rc, out, err):
     if rc == 0:
-        syslog(LOG_DEBUG|LOG_DAEMON, "BMC health check succeded");
+        syslog(LOG_DEBUG|LOG_DAEMON, "BMC health check succeeded.");
         return
     syslog(LOG_WARNING|LOG_DAEMON, "BMC health check failed." + err)
 
@@ -102,7 +102,7 @@ def setup_bmc_health_check(enable=None):
         cmd = 'start'
     else:
         cmd = 'stop'
-    service = 'bmc-health-check.timer'
+    service = 'bmc-health-check.service'
     try:
         r = subprocess.run([ 'systemctl', cmd, service ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
     except subprocess.CalledProcessError as e:
