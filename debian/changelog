@@ -1,3 +1,13 @@
+vyatta-ipmi (0.13) unstable; urgency=medium
+
+  [ Nachiketa Prachanda ]
+  * debian: fix errors on package build
+  * vyatta-bmc: add a daemon for bmc health check
+  * debian: add a new package for healthmon daemon
+  * use healthmon for bmc health check
+
+ -- Sameer Agrawal <sagrawa@mail.eng.vyatta.net>  Mon, 13 Sep 2021 10:09:24 -0700
+
 vyatta-ipmi (0.12) unstable; urgency=medium
 
   [ Nicholas Brown ]
