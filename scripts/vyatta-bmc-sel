@@ -74,7 +74,7 @@ def configure_bmc_sel():
         platform = detect()
     except PlatformError as e:
         print('failed to detect platform ' + repr(e))
-        sys.exit(1)
+        sys.exit(0)
 
     if not platform.get_platform_string() in SUPPORTED_PLATFORMS:
         print('WARNING: BMC SEL configuration is unsupported on this platform.')
